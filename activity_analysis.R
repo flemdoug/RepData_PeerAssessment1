@@ -1,4 +1,5 @@
 library(dplyr)
+library(lubridate)
 
 dataDir <- "./data"
 activityFile <- paste(dataDir,"/activity.zip", sep="");
@@ -14,15 +15,13 @@ if (!file.exists(activityFile)) {
 
 data <- read.csv(unz(activityFile,"activity.csv"))
 
-mean1 <- data[!is.na(data$steps),] %>%
-  group_by(date) %>%
-  summarise_each_(funs(mean), vars = c("date","steps"))
-
 totStepsPerDay <- data[!is.na(data$steps),] %>%
   group_by(date) %>%
-  summarise_each_(funs(sum), vars = c("date","steps"))
+  #summarise_each_(funs(sum), vars = c("date","steps")) 
+  summarise( totSteps = sum(steps))
 
-medianStepsPerDay <- median(totStepsPerDay$steps)
+medianStepsPerDay <- median(totStepsPerDay$totSteps)
+meanStepsPerDay <- mean(totStepsPerDay$totSteps) 
 
 hist(data$steps)
 
@@ -30,6 +29,9 @@ meanByInterval <- data[!is.na(data$steps),] %>%
   group_by(interval) %>%
   summarise_each_(funs(mean), vars = c("interval","steps"))
 
-plot(meanByInterval, meanByInterval$interval, meanByInterval$steps, type="l", na.rm=T)
+with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
 
 meanByInterval[meanByInterval$steps == max(meanByInterval$steps),]
+
+weekend <- data[wday(data$date, label=T) %in% c("Sat","Sun"),]
+weekday <- data[!wday(data$date, label=T) %in% c("Sat","Sun"),]
