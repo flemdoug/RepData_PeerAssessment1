@@ -1,9 +1,18 @@
 library(dplyr)
 
-temp <- tempfile();
-download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", temp)
-data <- read.csv(unz(temp,"activity.csv"))
-unlink(temp)
+dataDir <- "./data"
+activityFile <- paste(dataDir,"/activity.zip", sep="");
+
+if (!file.exists(dataDir)) {
+  dir.create(file.path(dataDir))
+}
+
+if (!file.exists(activityFile)) {
+  activityFile <- paste(dataDir,"/activity.zip", sep="");
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
+}
+
+data <- read.csv(unz(activityFile,"activity.csv"))
 
 mean1 <- data[!is.na(data$steps),] %>%
   group_by(date) %>%
