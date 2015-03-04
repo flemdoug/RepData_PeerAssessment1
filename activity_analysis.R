@@ -31,6 +31,9 @@ meanByInterval <- data[!is.na(data$steps),] %>%
 
 with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
 
+#handle NA update with mutate or sqldf update?
+# mutate(dat, dist = ifelse(speed == 4, dist * 100, dist)
+
 meanByInterval[meanByInterval$steps == max(meanByInterval$steps),]
 
 weekend <- data[wday(data$date, label=T) %in% c("Sat","Sun"),]
