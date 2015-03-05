@@ -18,8 +18,7 @@ data <- mutate(data, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'w
 data <- mutate(data, dow = wday(date, label=T))
 
 totStepsPerDay <- data[!is.na(data$steps),] %>%
-  group_by(date) %>%
-  #summarise_each_(funs(sum), vars = c("date","steps")) 
+  group_by(date) %>% 
   summarise( totSteps = sum(steps))
 
 medianStepsPerDay <- median(totStepsPerDay$totSteps)
@@ -60,4 +59,17 @@ hist(data$steps)
 with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
 
 hist(data$StepsIntDayType)
+
+totStepsPerDayIntDateType <- data %>%
+  group_by(date) %>% 
+  summarise( totSteps = sum(StepsIntDayType))
+
+medianStepsPerDayIntDayType <- median(totStepsPerDayIntDateType$totSteps)
+meanStepsPerDayIntDayType <- mean(totStepsPerDayIntDateType$totSteps)
+nNA <- nrow(data[is.na(data$steps),])
+
+pActivity <- qplot(interval, steps, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (Includes NA)")
+pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval, Day of Week)")
+pActivityDayType <- qplot(interval, StepsIntDayType, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval and either weekend day or weekday day)")
+
 
