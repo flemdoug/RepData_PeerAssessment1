@@ -32,22 +32,19 @@ meanByInterval <- data[!is.na(data$steps),] %>%
 
 with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
 
-#handle NA update with mutate or sqldf update?
-# mutate(dat, dist = ifelse(speed == 4, dist * 100, dist)
-#update NA to mean by weekday, interval 
-
 meanByIntervalDayType <- data[!is.na(data$steps),] %>%
   group_by(interval, daytype) %>%
   summarise_each_(funs(mean), vars = c("interval","steps","daytype"))
 
 meanByIntervalDayType$steps <- meanByIntervalDayType$steps
 
+for ( i in unique(data$interval)) {
+  data[is.na(data$steps) & data$interval == i & data$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
+}
 
-#d2<- left_join(meanByIntervalDayType, data, by=c("interval","daytype"))
-#dataAll <- data
-#dataAll[is.na(dataAll$steps),]$steps <- round(d2[is.na(d2$steps.y),]$steps.x,0)
-data[is.na(data$steps) & data$interval == 5 & data$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == 5 & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
-data[is.na(data$steps) & data$interval == 130 & data$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == 130 & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
+for ( i in unique(data$interval)) {
+  data[is.na(data$steps) & data$interval == i & data$daytype == 'weekend',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekend',]$steps,0)
+}
 
 
 
