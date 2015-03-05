@@ -2,14 +2,14 @@ library(dplyr)
 library(lubridate)
 
 dataDir <- "./data"
-activityFile <- paste(dataDir,"/activity.zip", sep="");
+activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
 
 if (!file.exists(dataDir)) {
   dir.create(file.path(dataDir))
 }
 
 if (!file.exists(activityFile)) {
-  activityFile <- paste(dataDir,"/activity.zip", sep="");
+  activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
   download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
 }
 
@@ -40,10 +40,14 @@ meanByIntervalDayType <- data[!is.na(data$steps),] %>%
   group_by(interval, daytype) %>%
   summarise_each_(funs(mean), vars = c("interval","steps","daytype"))
 
-d2<- left_join(meanByIntervalDayType, data, by=c("interval","daytype"))
-data[is.na(data$steps),]$steps <- d2[is.na(d2$steps.y),]$steps.x
+meanByIntervalDayType$steps <- meanByIntervalDayType$steps
 
 
+#d2<- left_join(meanByIntervalDayType, data, by=c("interval","daytype"))
+#dataAll <- data
+#dataAll[is.na(dataAll$steps),]$steps <- round(d2[is.na(d2$steps.y),]$steps.x,0)
+data[is.na(data$steps) & data$interval == 5 & data$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == 5 & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
+data[is.na(data$steps) & data$interval == 130 & data$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == 130 & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
 
 
 
