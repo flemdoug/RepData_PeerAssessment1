@@ -7,19 +7,111 @@ output:
 
 
 ## Loading and preprocessing the data
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
 
+options(scipen = 1, digits = 2)
+
+dataDir <- "./data"
+activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
+
+if (!file.exists(dataDir)) {
+  dir.create(file.path(dataDir))
+}
+
+if (!file.exists(activityFile)) {
+  activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
+}
+
+data <- read.csv(unz(activityFile,"activity.csv"))
+data <- mutate(data, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'weekend','weekday'))
+data <- mutate(data, dow = wday(date, label=T))
+
+totStepsPerDay <- data[!is.na(data$steps),] %>%
+  group_by(date) %>% 
+  summarise( totSteps = sum(steps))
+
+
+medianStepsPerDay <- round(median(totStepsPerDay$totSteps),0)
+
+meanStepsPerDay <- round(mean(totStepsPerDay$totSteps),0)
+
+hist(data$steps)
+```
 
 
 ## What is mean total number of steps taken per day?
 
-
+1. Median steps per day: `r medianStepsPerDay`  
+2. Mean steps per day: `r meanStepsPerDay`
 
 ## What is the average daily activity pattern?
 
+```{r}
+meanByInterval <- data[!is.na(data$steps),] %>%
+  group_by(interval) %>%
+  summarise_each_(funs(mean), vars = c("interval","steps"))
+
+with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
+
+```
 
 
 ## Imputing missing values
+```{r}
+numNA <- nrow(data[is.na(data$steps),])
+```
 
+1. Number of where steps = NA: `r numNA`
 
+2. Fill in NA values using mean of the interval (by the day of week)
+
+```{r}
+
+meanByIntervalDOW <- data[!is.na(data$steps),] %>%
+  group_by(interval, dow) %>%
+  summarise_each_(funs(mean), vars = c("interval","steps","dow"))
+
+dataDOW <- data
+
+for (i in unique(dataDOW$interval)) {
+  for (j in c("Mon","Tue","Wed","Thurs","Fri","Sat","Sun")) {
+    dataDOW[is.na(dataDOW$steps) & dataDOW$interval == i & dataDOW$dow == j,]$steps <- round(meanByIntervalDOW[meanByIntervalDOW$interval == i & meanByIntervalDOW$dow == j, ]$steps,0)
+  }
+}
+
+data$StepsIntDOW <- dataDOW$steps
+rm(dataDOW)
+```
+
+Histogram of steps with NAs filled in:
+
+```{r}
+hist(data$StepsIntDOW)
+
+```
+
+Calculate/display mean and median steps per day with NAs filled in
+
+```{r}
+totStepsPerDayIntDOW <- data %>%
+  group_by(date) %>% 
+  summarise( totSteps = sum(StepsIntDOW))
+
+medianStepsPerDayIntDOW <- median(totStepsPerDayIntDOW$totSteps)
+meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
+#nNA <- nrow(data[is.na(data$steps),])
+```
+1. Mean steps per day: `r meanStepsPerDayIntDOW`
+2. Median steps pers day: `r medianStepsPerDayIntDOW`
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval, Day of Week)")
+
+pActivityDOW
+```
