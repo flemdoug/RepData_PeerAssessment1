@@ -15,7 +15,7 @@ if (!file.exists(activityFile)) {
 }
 
 data <- read.csv(unz(activityFile,"activity.csv"))
-data <- mutate(data, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'weekend','weekday'))
+data <- mutate(data, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'Weekend','Weekday'))
 data <- mutate(data, dow = wday(date, label=T))
 
 totStepsPerDay <- data[!is.na(data$steps),] %>%
