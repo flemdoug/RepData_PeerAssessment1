@@ -63,17 +63,20 @@ hist(data$StepsIntDayType)
 
 totStepsPerDayIntDOW <- data %>%
   group_by(date) %>% 
-  summarise( totSteps = sum(StepsIntDayDOW))
+  summarise( totSteps = sum(StepsIntDOW))
 
-medianStepsPerDayIntDayType <- median(totStepsPerDayIntDateType$totSteps)
-meanStepsPerDayIntDayType <- mean(totStepsPerDayIntDateType$totSteps)
+medianStepsPerDayIntDOW <- median(totStepsPerDayIntDOW$totSteps)
+meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
 nNA <- nrow(data[is.na(data$steps),])
 
 
 pActivity <- qplot(interval, steps, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (Includes NA)")
 pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval, Day of Week)")
-pActivityDayType <- qplot(interval, StepsIntDayType, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval and either weekend day or weekday day)")
+pActivityDayType <- qplot(interval, StepsIntDayType, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval and either weekend day or weekday day)")
 
 par(mfrow=c(1,2))
 print(pActivityDOW)
 print(pActivityDayType)
+
+pActivityDOW2 <- ggplot(data=data, aes(x=interval, y=StepsIntDOW)) + geom_line() + facet_grid(daytype ~ .)
+pActivityDOW2 + ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)")

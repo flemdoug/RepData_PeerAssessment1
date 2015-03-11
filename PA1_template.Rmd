@@ -6,7 +6,7 @@ output:
 ---
 
 
-## Loading and preprocessing the data
+#### Loading and preprocessing the data
 ```{r}
 library(dplyr)
 library(lubridate)
@@ -42,13 +42,12 @@ meanStepsPerDay <- round(mean(totStepsPerDay$totSteps),0)
 hist(data$steps)
 ```
 
-
-## What is mean total number of steps taken per day?
+#### What is mean total number of steps taken per day?
 
 1. Median steps per day: `r medianStepsPerDay`  
 2. Mean steps per day: `r meanStepsPerDay`
 
-## What is the average daily activity pattern?
+#### What is the average daily activity pattern?
 
 ```{r}
 meanByInterval <- data[!is.na(data$steps),] %>%
@@ -60,12 +59,12 @@ with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interv
 ```
 
 
-## Imputing missing values
+#### Imputing missing values
 ```{r}
 numNA <- nrow(data[is.na(data$steps),])
 ```
 
-1. Number of where steps = NA: `r numNA`
+1. Number of step observations with NA: `r numNA`
 
 2. Fill in NA values using mean of the interval (by the day of week)
 
@@ -108,10 +107,14 @@ meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
 1. Mean steps per day: `r meanStepsPerDayIntDOW`
 2. Median steps pers day: `r medianStepsPerDayIntDOW`
 
-## Are there differences in activity patterns between weekdays and weekends?
+#### Are there differences in activity patterns between weekdays and weekends?
 
 ```{r}
-pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity (NA replaced with Mean of steps by Interval, Day of Week)")
+pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)", ylab="Steps", xlab="Interval")
+
+pActivityDOW2 <- ggplot(data=data, aes(x=interval, y=StepsIntDOW)) + geom_line() + facet_grid(daytype ~ .) + ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)")
+
 
 pActivityDOW
+pActivityDOW2
 ```
