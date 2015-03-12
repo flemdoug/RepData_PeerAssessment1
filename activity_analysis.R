@@ -11,6 +11,9 @@ if (!file.exists(dataDir)) {
 
 if (!file.exists(activityFile)) {
   activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
+  if (.Platform$OS.type == "windows") {
+    setInternet2(TRUE)
+  }
   download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
 }
 

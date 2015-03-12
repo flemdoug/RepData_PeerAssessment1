@@ -7,12 +7,12 @@ output:
 
 
 ### Loading and preprocessing the data
-```{r}
+```{r warning=FALSE, message=FALSE}
 library(dplyr)
 library(lubridate)
 library(ggplot2)
 
-
+#to prevent formatting of output to scientific notation
 options(scipen = 1, digits = 2)
 
 dataDir <- "./data"
@@ -23,24 +23,29 @@ if (!file.exists(dataDir)) {
 }
 
 if (!file.exists(activityFile)) {
-  activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
+  if (.Platform$OS.type == "windows") {
+    setInternet2(TRUE)
+  }
   download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
 }
 
-data <- read.csv(unz(activityFile,"activity.csv"))
-data <- mutate(data, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'weekend','weekday'))
-data <- mutate(data, dow = wday(date, label=T))
+actData <- read.csv(unz(activityFile,"activity.csv"))
+actData <- mutate(actData, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'Weekend','Weekday'))
+actData <- mutate(actData, dow = wday(date, label=T))
 
-totStepsPerDay <- data[!is.na(data$steps),] %>%
+totStepsPerDay <- actData[!is.na(actData$steps),] %>%
   group_by(date) %>% 
   summarise( totSteps = sum(steps))
-
 
 medianStepsPerDay <- round(median(totStepsPerDay$totSteps),0)
 meanStepsPerDay <- round(mean(totStepsPerDay$totSteps),0)
 
 ggplot(data=totStepsPerDay, aes(x=totSteps)) + 
-                geom_histogram()
+  geom_histogram() +
+  ylab("Frequency") +
+  xlab("Steps") +
+  ggtitle("Histogram - Daily total steps (NAs not removed)")
+
 ```
 
 ### What is mean total number of steps taken per day?
@@ -51,7 +56,7 @@ ggplot(data=totStepsPerDay, aes(x=totSteps)) +
 ### What is the average daily activity pattern?
 
 ```{r}
-meanByInterval <- data[!is.na(data$steps),] %>%
+meanByInterval <- actData[!is.na(actData$steps),] %>%
   group_by(interval) %>%
   summarise_each_(funs(mean), vars = c("interval","steps"))
 
@@ -63,7 +68,7 @@ with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interv
 
 ### Imputing missing values
 ```{r}
-numNA <- nrow(data[is.na(data$steps),])
+numNA <- nrow(actData[is.na(actData$steps),])
 ```
 
 1. Number of step observations with NA: `r numNA`
@@ -72,58 +77,61 @@ numNA <- nrow(data[is.na(data$steps),])
 
 ```{r}
 
-mid <- data[!is.na(data$steps),] %>%
+mid <- actData[!is.na(actData$steps),] %>%
   group_by(interval, dow) %>%
   summarise_each_(funs(mean), vars = c("interval","steps","dow"))
 
-data$StepsIntDOW <- as.numeric(apply(data,1, function(x) if( is.na(x[1])) round(mid[mid$interval == as.numeric(x[3]) & mid$dow ==  x[5],]$steps,0) else x[1][[1]][[1]]))
+actData$StepsIntDOW <- as.numeric(apply(actData,1, function(x) if( is.na(x[1])) round(mid[mid$interval == as.numeric(x[3]) & mid$dow ==  x[5],]$steps,0) else x[1][[1]][[1]]))
 
 ```
 
 Histogram of steps per day with NAs filled in:
 
 ```{r}
-totStepsPerDayIntDOW <- data %>%
+totStepsPerDayIntDOW <- actData %>%
   group_by(date) %>% 
   summarise( totSteps = sum(StepsIntDOW))
 
 ggplot(data=totStepsPerDayIntDOW, aes(x=totSteps)) + 
-  geom_histogram()
+  geom_histogram() +
+  ylab("Frequency") +
+  xlab("Steps") +
+  ggtitle("Histogram - Daily total steps (NAs imputed)")
 
 ```
 
 Calculate/display mean and median steps per day with NAs filled in
 
 ```{r}
-totStepsPerDayIntDOW <- data %>%
+totStepsPerDayIntDOW <- actData %>%
   group_by(date) %>% 
   summarise( totSteps = sum(StepsIntDOW))
 
 medianStepsPerDayIntDOW <- median(totStepsPerDayIntDOW$totSteps)
 meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
-#nNA <- nrow(data[is.na(data$steps),])
+#nNA <- nrow(actData[is.na(actData$steps),])
 ```
 1. Mean steps per day: `r meanStepsPerDayIntDOW`
 2. Median steps pers day: `r medianStepsPerDayIntDOW`
 
 ### Are there differences in activity patterns between weekdays and weekends?
 
-```{r}
-pRAW <- ggplot(data=data, aes(x=interval, y=steps)) + 
+```{r warning=FALSE}
+
+#Weekend vs Weekday activity (NA step values not removed)
+ggplot(data=actData, aes(x=interval, y=steps)) + 
           geom_line() + 
           facet_grid(daytype ~ .) +
           ggtitle("Weekend vs Weekday Activity \n (NA not removed)") + 
           ylab("Steps") + 
           xlab("Interval")
 
-pDOW <- ggplot(data=data, aes(x=interval, y=StepsIntDOW)) + 
+#Weekend vs Weekday activity (NA step values replaced)
+ggplot(data=actData, aes(x=interval, y=StepsIntDOW)) + 
           geom_line() + 
           facet_grid(daytype ~ .) +
           ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)") + 
           ylab("Steps") + 
           xlab("Interval")
 
-par(mfrow=c(1,2))
-pRAW
-pDOW
 ```
