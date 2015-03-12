@@ -43,23 +43,28 @@ meanByIntervalDOW <- data[!is.na(data$steps),] %>%
 dataDOW <- data
 dataDateType <- data
 
-for (i in unique(dataDateType$interval)) {
-  dataDateType[is.na(dataDateType$steps) & dataDateType$interval == i & dataDateType$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
-  dataDateType[is.na(dataDateType$steps) & dataDateType$interval == i & dataDateType$daytype == 'weekend',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekend',]$steps,0)
-}
+mid <- meanByIntervalDOW
+mid$steps <- as.integer(round(mid$steps,0))
 
 
-for (i in unique(dataDOW$interval)) {
-  for (j in c("Mon","Tue","Wed","Thurs","Fri","Sat","Sun")) {
-    dataDOW[is.na(dataDOW$steps) & dataDOW$interval == i & dataDOW$dow == j,]$steps <- round(meanByIntervalDOW[meanByIntervalDOW$interval == i & meanByIntervalDOW$dow == j, ]$steps,0)
-  }
-}
+data$StepsIntDOW <- apply(data,1, function(x) if( is.na(x[1])) round(mid[mid$interval == as.numeric(x[3]) & mid$dow ==  x[5],]$steps,0) else x[1][[1]][[1]])
+#for (i in unique(dataDateType$interval)) {
+#  dataDateType[is.na(dataDateType$steps) & dataDateType$interval == i & dataDateType$daytype == 'weekday',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekday',]$steps,0)
+#  dataDateType[is.na(dataDateType$steps) & dataDateType$interval == i & dataDateType$daytype == 'weekend',]$steps <- round(meanByIntervalDayType[meanByIntervalDayType$interval == i & meanByIntervalDayType$daytype == 'weekend',]$steps,0)
+#}
 
-data$StepsIntDayType <- dataDateType$steps
-data$StepsIntDOW <- dataDOW$steps
-rm(dataDateType, dataDOW)
 
-hist(data$StepsIntDayType)
+#for (i in unique(dataDOW$interval)) {#
+#  for (j in c("Mon","Tue","Wed","Thurs","Fri","Sat","Sun")) {
+#    dataDOW[is.na(dataDOW$steps) & dataDOW$interval == i & dataDOW$dow == j,]$steps <- round(meanByIntervalDOW[meanByIntervalDOW$interval == i & meanByIntervalDOW$dow == j, ]$steps,0)
+#  }
+#}
+
+#data$StepsIntDayType <- dataDateType$steps
+#data$StepsIntDOW <- dataDOW$steps
+#rm(dataDateType, dataDOW)
+
+#hist(data$StepsIntDayType)
 
 totStepsPerDayIntDOW <- data %>%
   group_by(date) %>% 

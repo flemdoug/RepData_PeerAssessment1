@@ -70,20 +70,12 @@ numNA <- nrow(data[is.na(data$steps),])
 
 ```{r}
 
-meanByIntervalDOW <- data[!is.na(data$steps),] %>%
+mid <- data[!is.na(data$steps),] %>%
   group_by(interval, dow) %>%
   summarise_each_(funs(mean), vars = c("interval","steps","dow"))
 
-dataDOW <- data
+data$StepsIntDOW <- as.numeric(apply(data,1, function(x) if( is.na(x[1])) round(mid[mid$interval == as.numeric(x[3]) & mid$dow ==  x[5],]$steps,0) else x[1][[1]][[1]]))
 
-for (i in unique(dataDOW$interval)) {
-  for (j in c("Mon","Tue","Wed","Thurs","Fri","Sat","Sun")) {
-    dataDOW[is.na(dataDOW$steps) & dataDOW$interval == i & dataDOW$dow == j,]$steps <- round(meanByIntervalDOW[meanByIntervalDOW$interval == i & meanByIntervalDOW$dow == j, ]$steps,0)
-  }
-}
-
-data$StepsIntDOW <- dataDOW$steps
-rm(dataDOW)
 ```
 
 Histogram of steps with NAs filled in:
