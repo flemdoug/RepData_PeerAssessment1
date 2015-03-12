@@ -36,10 +36,10 @@ totStepsPerDay <- data[!is.na(data$steps),] %>%
 
 
 medianStepsPerDay <- round(median(totStepsPerDay$totSteps),0)
-
 meanStepsPerDay <- round(mean(totStepsPerDay$totSteps),0)
 
-hist(data$steps)
+ggplot(data=totStepsPerDay, aes(x=totSteps)) + 
+                geom_histogram()
 ```
 
 ### What is mean total number of steps taken per day?
@@ -58,6 +58,7 @@ with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interv
 
 ```
 
+**Interval with Maximum average steps**: `r meanByInterval[meanByInterval$steps == max(meanByInterval$steps),]$interval` (`r round(max(meanByInterval$steps))` average steps)
 
 ### Imputing missing values
 ```{r}
@@ -78,10 +79,15 @@ data$StepsIntDOW <- as.numeric(apply(data,1, function(x) if( is.na(x[1])) round(
 
 ```
 
-Histogram of steps with NAs filled in:
+Histogram of steps per day with NAs filled in:
 
 ```{r}
-hist(data$StepsIntDOW)
+totStepsPerDayIntDOW <- data %>%
+  group_by(date) %>% 
+  summarise( totSteps = sum(StepsIntDOW))
+
+ggplot(data=totStepsPerDayIntDOW, aes(x=totSteps)) + 
+  geom_histogram()
 
 ```
 
@@ -102,11 +108,21 @@ meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
 ### Are there differences in activity patterns between weekdays and weekends?
 
 ```{r}
-pActivityDOW <- qplot(interval, StepsIntDOW, data=data, facets=daytype ~ ., geom="line", main="Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)", ylab="Steps", xlab="Interval")
+pRAW <- ggplot(data=data, aes(x=interval, y=steps)) + 
+          geom_line() + 
+          facet_grid(daytype ~ .) +
+          ggtitle("Weekend vs Weekday Activity \n (NA not removed)") + 
+          ylab("Steps") + 
+          xlab("Interval")
 
-pActivityDOW2 <- ggplot(data=data, aes(x=interval, y=StepsIntDOW)) + geom_line() + facet_grid(daytype ~ .) + ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)") + xlab("Interval") + ylab("Steps")
+pDOW <- ggplot(data=data, aes(x=interval, y=StepsIntDOW)) + 
+          geom_line() + 
+          facet_grid(daytype ~ .) +
+          ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)") + 
+          ylab("Steps") + 
+          xlab("Interval")
 
-
-pActivityDOW
-pActivityDOW2
+par(mfrow=c(1,2))
+pRAW
+pDOW
 ```
