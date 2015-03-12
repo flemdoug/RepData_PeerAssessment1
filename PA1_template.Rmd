@@ -12,6 +12,7 @@ library(dplyr)
 library(lubridate)
 library(ggplot2)
 
+
 options(scipen = 1, digits = 2)
 
 dataDir <- "./data"
