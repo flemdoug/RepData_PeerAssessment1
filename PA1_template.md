@@ -2,8 +2,6 @@
 Doug Fleming  
 March 15, 2015  
 
-(NOTE to reviewer: A figure directory was not included and not needed since all figures in this document are embedded into the document)
-
 ### Loading and preprocessing the data
 
 The activity and monitoring data is loaded directly from the internet source and processed for analysis. In the initial load, two variables are added, DOW (day of week) and daytype ("weekday" or "weekend").
