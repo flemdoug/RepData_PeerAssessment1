@@ -9,14 +9,19 @@ output:
 
 
 ### Loading and preprocessing the data
+
+The activity and monitoring data is loaded directly from the internet source and processed for analysis. In the initial load, two variables are added, DOW (day of week) and daytype ("weekday" or "weekend").
+
 ```{r warning=FALSE, message=FALSE}
 library(dplyr)
 library(lubridate)
 library(ggplot2)
+library(devtools)
 
 #to prevent formatting of output to scientific notation
 options(scipen = 1, digits = 2)
 
+#set data directory location and filename 
 dataDir <- "./data"
 activityFile <- paste(dataDir,"/repdata_data_activity.zip", sep="");
 
@@ -31,17 +36,21 @@ if (!file.exists(activityFile)) {
   download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", activityFile)
 }
 
+#read data file, add weekday/weekend and day of week variables
 actData <- read.csv(unz(activityFile,"activity.csv"))
 actData <- mutate(actData, daytype = ifelse(wday(date, label=T) %in% c("Sat","Sun"),'Weekend','Weekday'))
 actData <- mutate(actData, dow = wday(date, label=T))
 
+#sum steps per day
 totStepsPerDay <- actData[!is.na(actData$steps),] %>%
   group_by(date) %>% 
   summarise( totSteps = sum(steps))
 
+#calc mean/median steps per day
 medianStepsPerDay <- round(median(totStepsPerDay$totSteps),0)
 meanStepsPerDay <- round(mean(totStepsPerDay$totSteps),0)
 
+#plot histogram of total steps per day
 ggplot(data=totStepsPerDay, aes(x=totSteps)) + 
   geom_histogram() +
   ylab("Frequency") +
@@ -58,18 +67,31 @@ ggplot(data=totStepsPerDay, aes(x=totSteps)) +
 ### What is the average daily activity pattern?
 
 ```{r}
+
+#calculate means steps by interval across all days
 meanByInterval <- actData[!is.na(actData$steps),] %>%
   group_by(interval) %>%
   summarise_each_(funs(mean), vars = c("interval","steps"))
 
-with(meanByInterval,plot(interval, steps, type="l", ylab="Steps", xlab = "Interval"))
+#line plot of mean steps by interval
+ggplot(data=meanByInterval, aes(x=interval, y=steps)) + 
+          geom_line() + 
+          ggtitle("Daily activity - mean steps by interval") + 
+          ylab("Steps") + 
+          xlab("Interval") +
+          scale_x_continuous(limits=c(0, 2400), breaks=seq(0,2400,200))
 
 ```
 
 **Interval with Maximum average steps**: `r meanByInterval[meanByInterval$steps == max(meanByInterval$steps),]$interval` (`r round(max(meanByInterval$steps))` average steps)
 
 ### Imputing missing values
-```{r}
+
+Missing values (for steps) are imputed using the mean of each interval by the day of week. This interval mean is used to replace NA on the corresponding interval/day.
+
+```{r }
+
+#get number of rows with NA steps
 numNA <- nrow(actData[is.na(actData$steps),])
 ```
 
@@ -79,21 +101,27 @@ numNA <- nrow(actData[is.na(actData$steps),])
 
 ```{r}
 
+#create data frame of with interval, day-of-week, mean steps by interval - use
+# to fill in NA values based on day-of-week, interval.
 mid <- actData[!is.na(actData$steps),] %>%
   group_by(interval, dow) %>%
   summarise_each_(funs(mean), vars = c("interval","steps","dow"))
 
+#apply mean steps based on interval, day-of-week when steps = NA
 actData$StepsIntDOW <- as.numeric(apply(actData,1, function(x) if( is.na(x[1])) round(mid[mid$interval == as.numeric(x[3]) & mid$dow ==  x[5],]$steps,0) else x[1][[1]][[1]]))
 
 ```
 
 Histogram of steps per day with NAs filled in:
 
-```{r}
+```{r warning=FALSE, message=FALSE}
+
+#find new total steps per day, with NA step observations filled in 
 totStepsPerDayIntDOW <- actData %>%
   group_by(date) %>% 
   summarise( totSteps = sum(StepsIntDOW))
 
+#plot histogram with filled in NA
 ggplot(data=totStepsPerDayIntDOW, aes(x=totSteps)) + 
   geom_histogram() +
   ylab("Frequency") +
@@ -105,18 +133,20 @@ ggplot(data=totStepsPerDayIntDOW, aes(x=totSteps)) +
 Calculate/display mean and median steps per day with NAs filled in
 
 ```{r}
-totStepsPerDayIntDOW <- actData %>%
-  group_by(date) %>% 
-  summarise( totSteps = sum(StepsIntDOW))
 
+#calculate mean/median steps per day with NA filled in
 medianStepsPerDayIntDOW <- median(totStepsPerDayIntDOW$totSteps)
 meanStepsPerDayIntDOW <- mean(totStepsPerDayIntDOW$totSteps)
-#nNA <- nrow(actData[is.na(actData$steps),])
+
 ```
 1. Mean steps per day: `r meanStepsPerDayIntDOW`
 2. Median steps pers day: `r medianStepsPerDayIntDOW`
 
 ### Are there differences in activity patterns between weekdays and weekends?
+
+Two versions of this analysis are plotted below. Weekend vs Weekday activity patterns with the original data (NA values not replaced) and same plots with NA values replaced. Replacing NA does not seem to make much difference.
+
+However, significant differences exist between activity patterns of weekend vs weekday(on both versions). Weekend activity begins later in the day with peak periods late in the day on weekend vs early on weekdays.
 
 ```{r warning=FALSE}
 
@@ -126,7 +156,8 @@ ggplot(data=actData, aes(x=interval, y=steps)) +
           facet_grid(daytype ~ .) +
           ggtitle("Weekend vs Weekday Activity \n (NA not removed)") + 
           ylab("Steps") + 
-          xlab("Interval")
+          xlab("Interval")+
+          scale_x_continuous(limits=c(0, 2400), breaks=seq(0,2400,200))
 
 #Weekend vs Weekday activity (NA step values replaced)
 ggplot(data=actData, aes(x=interval, y=StepsIntDOW)) + 
@@ -134,6 +165,7 @@ ggplot(data=actData, aes(x=interval, y=StepsIntDOW)) +
           facet_grid(daytype ~ .) +
           ggtitle("Weekend vs Weekday Activity \n (NA replaced with Mean of steps by Interval, Day of Week)") + 
           ylab("Steps") + 
-          xlab("Interval")
+          xlab("Interval")+
+          scale_x_continuous(limits=c(0, 2400), breaks=seq(0,2400,200))
 
 ```
