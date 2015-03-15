@@ -96,7 +96,7 @@ ggplot(data=meanByInterval, aes(x=interval, y=steps)) +
 
 ### Imputing missing values
 
-Missing values (for steps) are imputed using the mean of each interval by the day of week. This interval mean is used to replace NA on the corresponding interval/day.
+Missing values (for steps) are imputed using the mean of each interval by the day of week. This interval mean is used to replace NA on the corresponding interval/day. Since activity might be affected by time of day (interval) on different days of the week, I felt this was the appropriate level to use to calculate a mean for substitution of NA.
 
 ```{r }
 
